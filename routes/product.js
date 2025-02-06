@@ -1,8 +1,8 @@
 import express from 'express';
-import { getProductsByCategoryId } from '../controllers/product';
+import { getProductsByCategoryId } from '../controllers/product.js';
 
 const router = express.Router();
 
-router.post('/:categoryId', getProductsByCategoryId)
+router.get('/:categoryId', getProductsByCategoryId)
 
 export default router;  

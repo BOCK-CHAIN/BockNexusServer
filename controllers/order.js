@@ -42,7 +42,6 @@ const createTransaction = async (req, res) => {
 }
 
 const createOrder = async (req, res) => {
-
     const {
         razorpay_order_id,
         razorpay_payment_id,
@@ -70,23 +69,23 @@ const createOrder = async (req, res) => {
                     0
                 ),
             });
-            const order = await Order.create({ 
-                user: userId, 
-                address, 
-                deliveryDate, 
-                items: cartItems?.map((item) => ({ 
-                product: item?._id, 
-                quantity: item?.quantity, 
-                })), 
-                status: "Order Placed", 
-                }); 
-                transaction.order = order._id; 
-                await transaction.save();
-                res.status(200).json({
-                    success: true,
-                    message: "Payment Verified and order created",
-                    order,
-                });
+            const order = await Order.create({
+                user: userId,
+                address,
+                deliveryDate,
+                items: cartItems?.map((item) => ({
+                    product: item?._id,
+                    quantity: item?.quantity,
+                })),
+                status: "Order Placed",
+            });
+            transaction.order = order._id;
+            await transaction.save();
+            res.status(200).json({
+                success: true,
+                message: "Payment Verified and order created",
+                order,
+            });
         } catch (error) {
             res.status(500).json({
                 status: "failed",
@@ -96,6 +95,33 @@ const createOrder = async (req, res) => {
 
         }
     }
-}
+};
 
-export { createTransaction };
+const getOrdersByUserId = async (req, res) => {
+    const { userId } = req.params;
+    try {
+        const orders = await Order.find({ user: userId })
+            .populate("user", "name email")
+            .populate("items.product", "name price image_uri ar_uri")
+            .sort({ createdAt: -1 });
+
+        if (!orders || orders.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "No orders found for this user",
+            });
+        }
+        res.status(200).json({
+            success: true,
+            orders,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to retrieve orders",
+            error: err.message,
+        });
+    }
+};
+
+export { createTransaction, createOrder, getOrdersByUserId };
