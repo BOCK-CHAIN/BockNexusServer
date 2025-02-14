@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "nodemon app.js",
+    "postinstall": "node seedScript",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
