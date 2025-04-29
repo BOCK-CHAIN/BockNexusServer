@@ -36,8 +36,8 @@ export const buildAdminJS = async (app) => {
         branding: {
             companyName: "Kart",
             withMadeWithLove: false,
-            favicon: "https://i.postimg.cc/ZRCCXLgg/temp-Imagef-Coi-ZY.avif",
-            logo: "https://i.postimg.cc/ZRCCXLgg/temp-Imagef-Coi-ZY.avif",
+            favicon: "https://i.postimg.cc/RCQ62tZK/Chain.png",
+            logo: "https://i.postimg.cc/RCQ62tZK/Chain.png",
         },
         defaultTheme: dark.id,
         availableThemes: [dark, light, noSidebar],
