@@ -14,8 +14,8 @@ import { dark, light, noSidebar } from "@adminjs/themes";
 AdminJS.registerAdapter(AdminJSMongoose)
 
 const DEFAULT_ADMIN = {
-    email: "Zeeyan@gmail.com",
-    password: "12345678"
+    email: "bock.infos@gmail.com",
+    password: "Admin@123"
 }
 
 const authenticate = async (email, password) => {
