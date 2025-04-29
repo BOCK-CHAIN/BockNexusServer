@@ -34,7 +34,7 @@ export const buildAdminJS = async (app) => {
             { resource: Transaction },
         ],
         branding: {
-            companyName: "Kart",
+            companyName: "Bock Nexus",
             withMadeWithLove: false,
             favicon: "https://i.postimg.cc/RCQ62tZK/Chain.png",
             logo: "https://i.postimg.cc/RCQ62tZK/Chain.png",
