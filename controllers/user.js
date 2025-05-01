@@ -65,7 +65,7 @@ const loginOrSignup = async (req, res) => {
         }
 
         const { accessToken, refreshToken } = generateTokens(user.toObject());
-        res.status(200).json({ accessToken, refreshToken });
+        res.status(200).json({ user, accessToken, refreshToken });
     } catch (error) {
         console.log(error); // Fix the variable name
         res.status(500).json({ error: error.message });
