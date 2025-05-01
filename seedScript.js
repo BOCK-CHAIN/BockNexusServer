@@ -48,31 +48,27 @@ dotenv.config();
 
 async function seedDatabase() {
     try {
-        await mongoose.connect(process.env.MONGO_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-
+        await mongoose.connect(process.env.MONGO_URI);
         await Product.deleteMany({});
         await Category.deleteMany({});
 
-        const categoryDocs = await Category.insertMany(categoriesData);
-
-        const categoryMap = categoryDocs.reduce((map, category) => {
-            map[category.name] = category._id;
-            return map;
+        const categories = await Category.insertMany(categoriesData);
+        
+        const categoryMap = categories.reduce((map, category) => { 
+            map[category.name] = category._id; 
+            return map; 
         }, {});
 
-        const productsWithCategoryIds = productData.map((product) => ({
-            ...product,
-            category: categoryMap[product.category],
+        const productWithCategoryIds = productData.map((product) => ({ 
+            ...product, 
+            category: categoryMap[product.category] 
         }));
 
-        await Product.insertMany(productsWithCategoryIds);
+        await Product.insertMany(productWithCategoryIds);
 
         console.log("✅ DATABASE SEEDED SUCCESSFULLY");
     } catch (error) {
-        console.error("❌ Error in seeding database:", error);
+        console.log("❌ Error in seeding database ->", error);
     } finally {
         mongoose.connection.close();
     }
