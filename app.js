@@ -1,77 +1,47 @@
-// import dotenv from 'dotenv';
-// import express from 'express';
-// import userRoutes from './routes/user.js';
-// import categoryRoutes from './routes/category.js';
-// import productRoutes from './routes/product.js';
-// import orderRoutes from './routes/order.js';
-// import connectDB from './config/connect.js';
-// import { PORT } from './config/config.js';
-// import { buildAdminJS } from './config/setup.js';
-
-// dotenv.config();
-
-// const app = express();
-
-// app.use(express.json());
-
-// // Routes
-// app.use('/user',userRoutes)
-// app.use('/category',categoryRoutes)
-// app.use('/product',productRoutes)
-// app.use("/order",orderRoutes)
-
-// const start = async () => {
-//     try {
-//         await connectDB(process.env.MONGO_URI);
-//         await buildAdminJS(app);
-//         app.listen({port:PORT,host:"0.0.0.0"},(err,addr)=> {
-//             if(err) {
-//                 console.log("Error in starting server -> ", err);
-//             }else{
-//             console.log(`Server started on http://localhost:${PORT}/admin`);
-//             }
-//         } )
-//     } catch (error) {
-//         console.log("Error nStarting Server -> ", error);
-//     }
-// }
-
-// start();
-
-
-import dotenv from 'dotenv';
-import express from 'express';
-import userRoutes from './routes/user.js';
-import categoryRoutes from './routes/category.js';
-import productRoutes from './routes/product.js';
-import orderRoutes from './routes/order.js';
-import connectDB from './config/connect.js';
-import { PORT } from './config/config.js';
-import { buildAdminJS } from './config/setup.js';
-
-dotenv.config();
+const express = require('express');
+const { PrismaClient } = require('./generated/prisma');
+require('dotenv').config();
+const userRoutes = require('./routes/userRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
+const productRoutes = require('./routes/productRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const cors = require('cors');
 
 const app = express();
+const port = process.env.PORT || 3000;
+const prisma = new PrismaClient();
 
-app.use(express.json());
+// Middleware
+app.use(cors()); // Enable CORS for all origins (customize as needed)
+app.use(express.json()); // Middleware to parse JSON
 
-// Routes
+// Health check endpoint
+app.get('/', async (req, res) => {
+  try {
+    const now = await prisma.$queryRaw`SELECT NOW()`;
+    res.json({ status: 'ok', time: now[0].now });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API routes
 app.use('/user', userRoutes);
 app.use('/category', categoryRoutes);
 app.use('/product', productRoutes);
-app.use('/order', orderRoutes);
+app.use('/orders', orderRoutes);
 
-const start = async () => {
-  try {
-    await connectDB(process.env.MONGO_URI);
-    await buildAdminJS(app);
-    app.listen({ port: PORT, host: "0.0.0.0" }, () => {
-      console.log(`✅ Server started and publicly accessible at: http://<YOUR-EXTERNAL-IP>:${PORT}/admin`);
-      console.log(`🌐 Replace <YOUR-EXTERNAL-IP> with your actual GCP instance IP`);
-    });
-  } catch (error) {
-    console.log("❌ Error Starting Server ->", error);
-  }
-};
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Endpoint not found' });
+});
 
-start();
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+app.listen(port, '0.0.0.0', () => { 
+  console.log(`Server running on port ${port}`);
+});

@@ -1,77 +1,57 @@
-// import dotenv from "dotenv";
-// import mangoose, {Types} from "mongoose";
-// import Product from "./models/product";
-// import Category from "./models/category";
-// import { categoriesData, productData } from "./seedData";
-// import mongoose from "mongoose";
+const { PrismaClient } = require('./generated/prisma');
+const { categoriesData, productData } = require('./seedData');
+require('dotenv').config();
 
-// dotenv.config();
-
-// async function seedDatabase() {
-//     try {
-//         await mongoose.connect(process.env.MONGO_URI) 
-//         await Product.deleteMany({});
-//         await Category.deleteMany({});
-
-//         const categories = await Category.insertMany(categoriesData);
-        
-//         const categoryMap = categoryDocs.reduce((map, category)=>{ 
-//             map [category.name]=category._id; 
-//             return map 
-//             }) 
-//             const productWithCategoryIds = productData.map((product)=>({ 
-//                 ...product, 
-//                 category: categoryMap[product.category] 
-//             }))
-
-//             await Product.insertMany(productWithCategoryIds);
-
-//         console.log("DATABASE SEEDED SUCCESSFULLY");
-//     } catch (error) {
-//         console.log("Error in seeding database -> ", error);
-//     }finally {
-//         mongoose.connection.close();
-//     }
-// }
-
-// seedDatabase()
-
-
-
-import dotenv from "dotenv";
-import mongoose from "mongoose";
-import Product from "./models/product.js";
-import Category from "./models/category.js";
-import { categoriesData, productData } from "./seedData.js";
-
-dotenv.config();
+const prisma = new PrismaClient();
 
 async function seedDatabase() {
     try {
-        await mongoose.connect(process.env.MONGO_URI);
-        await Product.deleteMany({});
-        await Category.deleteMany({});
+        // Delete existing data
+        await prisma.product.deleteMany();
+        await prisma.category.deleteMany();
 
-        const categories = await Category.insertMany(categoriesData);
-        
-        const categoryMap = categories.reduce((map, category) => { 
-            map[category.name] = category._id; 
-            return map; 
+        // Insert categories
+        const categories = await prisma.category.createMany({
+            data: categoriesData.map(({ name, image_uri, address, createdAt, updatedAt }) => ({
+                name,
+                image_uri,
+                address,
+                createdAt: createdAt ? new Date(createdAt) : undefined,
+                updatedAt: updatedAt ? new Date(updatedAt) : undefined,
+            })),
+            skipDuplicates: true
+        });
+
+        // Fetch categories to map names to IDs
+        const allCategories = await prisma.category.findMany();
+        const categoryMap = allCategories.reduce((map, category) => {
+            map[category.name] = category.id;
+            return map;
         }, {});
 
-        const productWithCategoryIds = productData.map((product) => ({ 
-            ...product, 
-            category: categoryMap[product.category] 
-        }));
+        // Insert products with category IDs
+        await prisma.product.createMany({
+            data: productData.map(product => {
+                // Remove the 'category' field, only use categoryId and other fields
+                const { category, ...rest } = product;
+                return {
+                    ...rest,
+                    categoryId: categoryMap[product.category],
+                    createdAt: product.createdAt ? new Date(product.createdAt) : undefined,
+                    updatedAt: product.updatedAt ? new Date(product.updatedAt) : undefined,
+                };
+            }),
+            skipDuplicates: true
+        });
 
-        await Product.insertMany(productWithCategoryIds);
-
-        console.log("✅ DATABASE SEEDED SUCCESSFULLY");
+        console.log('✅ DATABASE SEEDED SUCCESSFULLY');
     } catch (error) {
-        console.log("❌ Error in seeding database ->", error);
+        console.log('❌ Error in seeding database ->', error);
     } finally {
-        mongoose.connection.close();
+        await prisma.$disconnect();
     }
 }
 
 seedDatabase();
+// This script seeds the database with initial data for categories and products.
+//node seedScript.js is used to run this script.

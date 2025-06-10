@@ -1,8 +1,11 @@
-import Category from '../models/category.js';
+const { PrismaClient } = require('../generated/prisma');
+const prisma = new PrismaClient();
 
 const getAllCategories = async (req, res) => {
     try {
-        const categories = await Category.find();
+        const categories = await prisma.category.findMany({
+            include: { products: true }
+        });
         res.status(200).json({
             success: true,
             categories,
@@ -11,8 +14,9 @@ const getAllCategories = async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to retrieve categories",
-            error: err.message,
+            error: error.message,
         });
     }
 };
-export { getAllCategories };
+
+module.exports = { getAllCategories };

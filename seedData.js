@@ -1,4 +1,4 @@
-export const categoriesData = [
+const categoriesData = [
     {
       id: 1,
       name: "Home",
@@ -58,10 +58,20 @@ export const categoriesData = [
       name: "Food",
       image_uri:
         "https://rukminim2.flixcart.com/fk-p-flap/121/121/image/916c69ce7fae622b.jpg?q=60",
+    },{
+      id: 11,
+      name: "Books",
+      image_uri:
+        "https://static.vecteezy.com/system/resources/previews/021/644/208/large_2x/books-stacked-on-top-of-each-other-created-with-generative-ai-photo.jpg",
+    },{
+      id: 12,
+      name: "Toys",
+      image_uri:
+        "https://th.bing.com/th/id/OIP.1pq_RQS0bPxB_YM6IWD5DwHaHa?rs=1&pid=ImgDetMain",
     },
   ];
   
-  export const productData = [
+  const productData = [
     {
       name: "Slim Fit Jeans",
       price: 40,
@@ -117,7 +127,7 @@ export const categoriesData = [
       description:
         "Comfortable and sporty jogger pants, perfect for workouts or casual outings.",
       image_uri:
-        "https://rukminim2.flixcart.com/image/536/644/xif0q/trouser/p/h/u/28-maroon-simpale-erenchino-original-imah7sjkvbhqbget.jpeg?q=60&crop=false",
+        "https://static.vecteezy.com/system/resources/previews/021/644/208/large_2x/books-stacked-on-top-of-each-other-created-with-generative-ai-photo.jpg",
       ar_uri: null,
       category: "Fashion",
     },
@@ -170,6 +180,25 @@ export const categoriesData = [
         "https://rukminim2.flixcart.com/image/430/516/xif0q/shoe/r/q/b/9-100-corsac-black-original-imagzx8vhacynhcy.jpeg?q=60&crop=false",
       ar_uri: null,
       category: "Fashion",
+    },    {
+      name: "BOOkS on JavaScript",
+      price: 900,
+      description:
+        "An in-depth guide to JavaScript programming, covering advanced topics and best practices.",
+      image_uri:
+        "https://rukminim2.flixcart.com/image/430/516/xif0q/shoe/r/q/b/9-100-corsac-black-original-imagzx8vhacynhcy.jpeg?q=60&crop=false",
+      ar_uri: null,
+      category: "Books",
+    },    {
+      name: "Toys for Kids",
+      price: 30,
+      description:
+        "A set of educational toys designed to enhance learning and creativity in children.",
+      image_uri:
+        "https://th.bing.com/th/id/OIP.1pq_RQS0bPxB_YM6IWD5DwHaHa?rs=1&pid=ImgDetMain",
+      ar_uri: null,
+      category: "Toys",
     },
   ];
   
+  module.exports = { categoriesData, productData };
