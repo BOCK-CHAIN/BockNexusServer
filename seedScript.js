@@ -1,4 +1,4 @@
-const { PrismaClient } = require('./generated/prisma');
+const { PrismaClient } = require('@prisma/client');
 const { categoriesData, productData } = require('./seedData');
 require('dotenv').config();
 
@@ -44,9 +44,9 @@ async function seedDatabase() {
             skipDuplicates: true
         });
 
-        console.log('✅ DATABASE SEEDED SUCCESSFULLY');
+        console.log('DATABASE SEEDED SUCCESSFULLY');
     } catch (error) {
-        console.log('❌ Error in seeding database ->', error);
+        console.log('Error in seeding database ->', error);
     } finally {
         await prisma.$disconnect();
     }
