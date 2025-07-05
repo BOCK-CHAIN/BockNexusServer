@@ -212,7 +212,7 @@ const updateCartItem = async (req, res) => {
 const removeFromCart = async (req, res) => {
   try {
     const { cartItemId } = req.params;
-    const userId = req.user.id; // Get from authenticated user
+    const userId = req.user.id; // Get from authed user
 
     const existingItem = await prisma.cartItem.findFirst({
       where: {
@@ -250,7 +250,7 @@ const removeFromCart = async (req, res) => {
 // Clear user's cart
 const clearCart = async (req, res) => {
   try {
-    const userId = req.user.id; // Get from authenticated user
+    const userId = req.user.id; // Get from authed user
 
     await prisma.cartItem.deleteMany({
       where: { userId: userId }

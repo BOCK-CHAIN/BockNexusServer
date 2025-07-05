@@ -26,6 +26,7 @@ model User {
   transactions Transaction[]
   cartItems    CartItem[]
   reviews      Review[]
+  cartTotal    Float        @default(0)
 }
 
 model Category {

@@ -328,6 +328,18 @@ const changePassword = async (req, res) => {
     }
 };
 
+async function updateUserCartTotal(userId) {
+    const cartItems = await prisma.cartItem.findMany({
+        where: { userId },
+        include: { product: true }
+    });
+    const total = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    await prisma.user.update({
+        where: { id: userId },
+        data: { cartTotal: total }
+    });
+}
+
 module.exports = {
     register,
     login,
