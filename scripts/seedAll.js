@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 async function seedHomePageData() {
   try {
-    console.log('Starting home page data seeding...');
+    console.log('🌐 Starting home page data seeding...');
 
     // Insert categories for home page
     const categories = await prisma.category.createMany({
@@ -40,37 +40,42 @@ async function seedHomePageData() {
       skipDuplicates: true
     });
 
-    console.log('Home page data seeded successfully!');
+    console.log('✅ Home page data seeded successfully!');
   } catch (error) {
-    console.error('Error seeding home page data:', error);
+    console.error('❌ Error seeding home page data:', error);
   }
 }
 
 async function seedCategoriesPageData() {
   try {
-    console.log('Starting categories page data seeding...');
+    console.log('📂 Starting categories page data seeding...');
 
     // Create categories for categories page
     const createdCategories = [];
     for (const categoryData of categoriesPageData) {
-      const { name, ...dataWithoutName } = categoryData;
-      const category = await prisma.category.upsert({
-        where: { name },
-        update: {
-          image_uri: categoryData.image_uri,
-          address: categoryData.address,
-          createdAt: categoryData.createdAt ? new Date(categoryData.createdAt) : undefined,
-          updatedAt: categoryData.updatedAt ? new Date(categoryData.updatedAt) : undefined,
-        },
-        create: {
-          name,
-          ...dataWithoutName,
-          createdAt: categoryData.createdAt ? new Date(categoryData.createdAt) : undefined,
-          updatedAt: categoryData.updatedAt ? new Date(categoryData.updatedAt) : undefined,
-        }
+      // Check if category already exists
+      let category = await prisma.category.findUnique({
+        where: { name: categoryData.name }
       });
+
+      if (!category) {
+        // Create new category
+        category = await prisma.category.create({
+          data: categoryData
+        });
+        console.log(`Category created: ${category.name}`);
+      } else {
+        // Update existing category
+        category = await prisma.category.update({
+          where: { id: category.id },
+          data: {
+            image_uri: categoryData.image_uri,
+            address: categoryData.address
+          }
+        });
+        console.log(`Category updated: ${category.name}`);
+      }
       createdCategories.push(category);
-      console.log(`Category upserted: ${category.name}`);
     }
 
     // Create sample products for categories page
@@ -178,22 +183,22 @@ async function seedCategoriesPageData() {
       console.log('Sample reviews created/updated');
     }
 
-    console.log('Categories page data seeded successfully!');
+    console.log('✅ Categories page data seeded successfully!');
   } catch (error) {
-    console.error('Error seeding categories page data:', error);
+    console.error('❌ Error seeding categories page data:', error);
   }
 }
 
 async function seedAllData() {
   try {
-    console.log('Starting complete database seeding...');
+    console.log('🚀 Starting complete database seeding...');
     
     await seedHomePageData();
     await seedCategoriesPageData();
     
-    console.log('Complete database seeding finished successfully!');
+    console.log('🎉 Complete database seeding finished successfully!');
   } catch (error) {
-    console.error('Error in complete seeding:', error);
+    console.error('❌ Error in complete seeding:', error);
   } finally {
     await prisma.$disconnect();
   }
@@ -219,7 +224,7 @@ switch (command) {
 // Usage instructions
 if (!command || args.includes('--help')) {
   console.log(`
-Database Seeding Scripts
+📚 Database Seeding Scripts
 
 Usage:
   node scripts/seedAll.js [command]
