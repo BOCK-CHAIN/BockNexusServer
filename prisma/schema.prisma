@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,27 +9,26 @@ datasource db {
 
 model User {
   id           Int           @id @default(autoincrement())
-  username     String        @unique
-  email        String        @unique
-  password     String
   phone        String?       @unique
-  address      String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  orders       Order[]
-  transactions Transaction[]
+  email        String        @unique
+  password     String
+  username     String        @unique
+  Address      Address[]
   cartItems    CartItem[]
+  orders       Order[]
   reviews      Review[]
+  transactions Transaction[]
 }
 
 model Category {
   id        Int       @id @default(autoincrement())
   name      String    @unique
   image_uri String
-  products  Product[]
-  address   String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  products  Product[]
 }
 
 model Product {
@@ -45,19 +38,18 @@ model Product {
   price        Float
   ar_uri       String?
   description  String?
-  category     Category      @relation(fields: [categoryId], references: [id])
   categoryId   Int
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  items        Item[]
   cartItems    CartItem[]
+  items        Item[]
+  category     Category      @relation(fields: [categoryId], references: [id])
   productSizes ProductSize[]
   reviews      Review[]
 }
 
 model ProductSize {
   id        Int        @id @default(autoincrement())
-  product   Product    @relation(fields: [productId], references: [id])
   productId Int
   size      String
   stock     Int        @default(0)
@@ -65,64 +57,64 @@ model ProductSize {
   updatedAt DateTime   @updatedAt
   cartItems CartItem[]
   items     Item[]
+  product   Product    @relation(fields: [productId], references: [id])
 
   @@unique([productId, size])
 }
 
 model CartItem {
   id            Int          @id @default(autoincrement())
-  user          User         @relation(fields: [userId], references: [id])
   userId        Int
-  product       Product      @relation(fields: [productId], references: [id])
   productId     Int
-  productSize   ProductSize? @relation(fields: [productSizeId], references: [id])
   productSizeId Int?
   quantity      Int
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+  product       Product      @relation(fields: [productId], references: [id])
+  productSize   ProductSize? @relation(fields: [productSizeId], references: [id])
+  user          User         @relation(fields: [userId], references: [id])
 }
 
 model Review {
   id        Int      @id @default(autoincrement())
-  product   Product  @relation(fields: [productId], references: [id])
   productId Int
-  user      User     @relation(fields: [userId], references: [id])
   userId    Int
   rating    Int
   comment   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Order {
   id           Int           @id @default(autoincrement())
-  user         User          @relation(fields: [userId], references: [id])
   userId       Int
   deliveryDate DateTime
-  address      String?
-  items        Item[]
   status       OrderStatus   @default(ORDER_PLACED)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  addressId    Int
+  items        Item[]
+  Address      Address       @relation(fields: [addressId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
   transactions Transaction[]
 }
 
 model Item {
   id            Int          @id @default(autoincrement())
-  product       Product      @relation(fields: [productId], references: [id])
   productId     Int
-  productSize   ProductSize? @relation(fields: [productSizeId], references: [id])
   productSizeId Int?
   quantity      Int
-  order         Order        @relation(fields: [orderId], references: [id])
   orderId       Int
+  order         Order        @relation(fields: [orderId], references: [id])
+  product       Product      @relation(fields: [productId], references: [id])
+  productSize   ProductSize? @relation(fields: [productSizeId], references: [id])
 }
 
 model Transaction {
   id         Int               @id @default(autoincrement())
-  user       User              @relation(fields: [userId], references: [id])
   userId     Int
-  order      Order?            @relation(fields: [orderId], references: [id])
   orderId    Int?
   paymentId  String
   orderRefId String
@@ -130,6 +122,25 @@ model Transaction {
   amount     Float
   createdAt  DateTime          @default(now())
   updatedAt  DateTime          @updatedAt
+  order      Order?            @relation(fields: [orderId], references: [id])
+  user       User              @relation(fields: [userId], references: [id])
+}
+
+model Address {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  nickname  String
+  line1     String
+  line2     String?
+  city      String
+  state     String
+  zip       String
+  country   String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  User      User     @relation(fields: [userId], references: [id])
+  Order     Order[]
 }
 
 enum OrderStatus {

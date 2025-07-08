@@ -11,7 +11,6 @@ const getAllCategories = async (req, res) => {
                 id: true,
                 name: true,
                 image_uri: true,
-                address: true,
                 _count: {
                     select: {
                         products: true

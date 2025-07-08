@@ -25,8 +25,7 @@ async function seedCategoriesDatabase() {
         category = await prisma.category.update({
           where: { id: category.id },
           data: {
-            image_uri: categoryData.image_uri,
-            address: categoryData.address
+            image_uri: categoryData.image_uri
           }
         });
         console.log(`Category updated: ${category.name}`);

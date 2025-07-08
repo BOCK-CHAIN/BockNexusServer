@@ -9,10 +9,9 @@ async function seedHomePageData() {
 
     // Insert categories for home page
     const categories = await prisma.category.createMany({
-      data: categoriesData.map(({ name, image_uri, address, createdAt, updatedAt }) => ({
+      data: categoriesData.map(({ name, image_uri, createdAt, updatedAt }) => ({
         name,
         image_uri,
-        address,
         createdAt: createdAt ? new Date(createdAt) : undefined,
         updatedAt: updatedAt ? new Date(updatedAt) : undefined,
       })),

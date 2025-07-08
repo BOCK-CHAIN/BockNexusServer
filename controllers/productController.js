@@ -100,8 +100,34 @@ const getProductsByCategoryId = async (req, res) => {
     }
 };
 
+// Get random products
+const getRandomProducts = async (req, res) => {
+    try{
+        const products = await prisma.$queryRaw`
+            SELECT * FROM "Product"
+            ORDER BY RANDOM()
+            LIMIT 10;
+        `;
+
+        res.status(200).json({
+        success: true,
+        data: products,
+        });
+
+    }catch (err) {
+        console.error('Error fetching random products:', err);
+        res.status(500).json({
+            success: false,
+            message: "Failed to retrieve random products",
+            error: err.message,
+        });
+    }
+};
+
+
 module.exports = { 
     getAllProducts,
     getProductById,
-    getProductsByCategoryId 
+    getProductsByCategoryId,
+    getRandomProducts
 };

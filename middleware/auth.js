@@ -25,7 +25,6 @@ const authenticateToken = async (req, res, next) => {
         username: true,
         email: true,
         phone: true,
-        address: true
       }
     });
 

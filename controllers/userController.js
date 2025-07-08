@@ -14,7 +14,7 @@ const generateToken = (user) => {
 // User Registration
 const register = async (req, res) => {
     try {
-        const { username, email, password, phone, address } = req.body;
+        const { username, email, password, phone } = req.body;
 
         // Validate required fields
         if (!username || !email || !password) {
@@ -59,14 +59,12 @@ const register = async (req, res) => {
                 email,
                 password: hashedPassword,
                 phone: phone || null,
-                address: address || null
             },
             select: {
                 id: true,
                 username: true,
                 email: true,
                 phone: true,
-                address: true,
                 createdAt: true
             }
         });
@@ -96,26 +94,25 @@ const register = async (req, res) => {
 // User Login
 const login = async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { email, password } = req.body;
 
         // Validate required fields
-        if (!username || !password) {
+        if (!email || !password) {
             return res.status(400).json({
                 success: false,
-                message: 'Username and password are required'
+                message: 'Email and password are required'
             });
         }
 
-        // Find user by username
+        // Find user by email
         const user = await prisma.user.findUnique({
-            where: { username },
+            where: { email },
             select: {
                 id: true,
                 username: true,
                 email: true,
                 password: true,
                 phone: true,
-                address: true,
                 createdAt: true
             }
         });
@@ -174,7 +171,6 @@ const getProfile = async (req, res) => {
                 username: true,
                 email: true,
                 phone: true,
-                address: true,
                 createdAt: true
             }
         });
@@ -205,7 +201,7 @@ const getProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { email, phone, address } = req.body;
+        const { username, email, phone } = req.body;
 
         // Check if email is being updated and if it already exists
         if (email) {
@@ -244,16 +240,15 @@ const updateProfile = async (req, res) => {
         const updatedUser = await prisma.user.update({
             where: { id: userId },
             data: {
+                username: username || undefined,
                 email: email || undefined,
                 phone: phone || undefined,
-                address: address || undefined
             },
             select: {
                 id: true,
                 username: true,
                 email: true,
                 phone: true,
-                address: true,
                 createdAt: true
             }
         });

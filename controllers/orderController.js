@@ -47,7 +47,6 @@ const createOrder = async (req, res) => {
         userId,
         cartItems,
         deliveryDate,
-        address,
     } = req.body;
     const key_secret = process.env.RAZOR_PAY_SECRET;
     const generated_signature = crypto.createHmac('sha256', key_secret)
@@ -64,7 +63,6 @@ const createOrder = async (req, res) => {
         const order = await prisma.order.create({
             data: {
                 user: { connect: { id: Number(userId) } },
-                address,
                 deliveryDate: new Date(deliveryDate),
                 items: {
                     create: cartItems.map(item => ({
