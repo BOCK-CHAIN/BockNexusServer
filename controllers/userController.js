@@ -323,10 +323,57 @@ const changePassword = async (req, res) => {
     }
 };
 
+//Delete a user
+const deleteUser = async (req, res) => {
+    try{
+
+        const userId = req.user.id;
+        const { password } = req.body;
+
+        const user = await prisma.user.findUnique({
+            where: { id: userId }, 
+        })
+
+        // Check password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid password'
+            });
+        }
+
+        await prisma.$transaction([
+            prisma.address.deleteMany({ where: { userId } }),
+            prisma.cartItem.deleteMany({ where: { userId } }),
+            prisma.order.deleteMany({ where: { userId } }),
+            prisma.review.deleteMany({ where: { userId } }),
+            prisma.transaction.deleteMany({ where: { userId } }),
+            prisma.user.delete({ where: { id: userId } })
+        ]);
+
+        res.status(200).json(
+            {
+                success: true,
+                message: 'User deleted successfully'
+            }
+        )
+    }catch(error) {
+        console.error('Delete user error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+}
+
 module.exports = {
     register,
     login,
     getProfile,
     updateProfile,
-    changePassword
-}; 
+    changePassword,
+    deleteUser
+};

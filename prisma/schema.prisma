@@ -127,7 +127,7 @@ model Transaction {
 }
 
 model Address {
-  id        Int      @id @default(autoincrement())
+  id        Int           @id @default(autoincrement())
   userId    Int
   nickname  String
   line1     String
@@ -136,11 +136,15 @@ model Address {
   state     String
   zip       String
   country   String
-  isDefault Boolean  @default(false)
-  createdAt DateTime @default(now())
+  isDefault Boolean       @default(false)
+  createdAt DateTime      @default(now())
   updatedAt DateTime
-  User      User     @relation(fields: [userId], references: [id])
+  type      TypeOfAddress
+  User      User          @relation(fields: [userId], references: [id])
   Order     Order[]
+
+  @@index([userId])
+  @@unique([nickname])
 }
 
 enum OrderStatus {
@@ -155,4 +159,10 @@ enum TransactionStatus {
   Success
   Failed
   Pending
+}
+
+enum TypeOfAddress {
+  Home
+  Office
+  Other
 }
