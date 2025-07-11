@@ -38,7 +38,7 @@ const getUserAddresses = async (req, res) => {
 const editAddress = async (req, res) => {
     try{
         const userId = req.user.id;
-        const { id, nickname, line1, line2, city, state, zip, country, isDefault, type } = req.body;
+        const { id, nickname, line1, line2, city, state, zip, country, isDefault, receiverName, type } = req.body;
 
         if(!userId || !id) {
             return res.status(400).json({ 
@@ -71,6 +71,7 @@ const editAddress = async (req, res) => {
                 zip,
                 country,
                 type,
+                receiverName,
                 isDefault,
                 updatedAt: new Date()
             }
@@ -94,7 +95,7 @@ const editAddress = async (req, res) => {
 const addAddress = async (req, res) => {
     try{
         const userId = req.user.id;
-        const { nickname, line1, line2, city, state, zip, country, isDefault, type } = req.body;
+        const { nickname, line1, line2, city, state, zip, country, isDefault, receiverName, type } = req.body;
 
         if(!userId) {
             return res.status(400).json({ 
@@ -140,6 +141,7 @@ const addAddress = async (req, res) => {
                 zip,
                 country,
                 type,
+                receiverName,
                 isDefault: isDefault,
                 updatedAt: new Date()
             }
