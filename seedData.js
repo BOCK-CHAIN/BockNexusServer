@@ -65,9 +65,9 @@ const categoriesData = [
         "https://static.vecteezy.com/system/resources/previews/021/644/208/large_2x/books-stacked-on-top-of-each-other-created-with-generative-ai-photo.jpg",
     },{
       id: 12,
-      name: "Toys",
+      name: "Kids Toys",
       image_uri:
-        "https://th.bing.com/th/id/OIP.1pq_RQS0bPxB_YM6IWD5DwHaHa?rs=1&pid=ImgDetMain",
+        "https://img.freepik.com/premium-photo/toys-collection-isolated-background_488220-2432.jpg?semt=ais_hybrid&w=740",
     },
   ];
   
@@ -117,7 +117,7 @@ const categoriesData = [
       price: 100,
       description: "A sleek leather handbag for women, perfect for any occasion.",
       image_uri:
-        "https://rukminim2.flixcart.com/image/430/516/xif0q/backpack/f/y/5/9-ember-13-ember19sbfmt-laptop-backpack-genie-36-19-original-imagyg9jrmn9huhg.jpeg?q=60&crop=false",
+        "https://classyleatherbags.com/cdn/shop/collections/womens_leather_crossbody_bags_a113902c-6ed2-480e-8e9f-d24c09b5e4c7_1350x1350.jpg?v=1683775859",
       ar_uri: null,
       category: "Fashion",
     },
@@ -127,7 +127,7 @@ const categoriesData = [
       description:
         "Comfortable and sporty jogger pants, perfect for workouts or casual outings.",
       image_uri:
-        "https://static.vecteezy.com/system/resources/previews/021/644/208/large_2x/books-stacked-on-top-of-each-other-created-with-generative-ai-photo.jpg",
+        "https://assets.myntassets.com/w_412,q_60,dpr_2,fl_progressive/assets/images/27414062/2025/4/17/74c86cc5-83e8-4d2a-955e-29095345eab21744910076796-NOBERO-Men-Regular-Pure-Cotton-Joggers-8691744910076255-1.jpg",
       ar_uri: null,
       category: "Fashion",
     },
@@ -181,7 +181,7 @@ const categoriesData = [
       ar_uri: null,
       category: "Fashion",
     },    {
-      name: "BOOkS on JavaScript",
+      name: "Books on JavaScript",
       price: 900,
       description:
         "An in-depth guide to JavaScript programming, covering advanced topics and best practices.",

@@ -66,21 +66,42 @@ const getProductById = async (req, res) => {
     }
 };
 
+// Get products by category ID
 const getProductsByCategoryId = async (req, res) => {
-    const { categoryId } = req.params;
+    const categoryId = parseInt(req.params.categoryId);
     try {
         const products = await prisma.product.findMany({
-            where: { categoryId: Number(categoryId) },
-            include: {
-                category: true,
-                productSizes: true,
+            where: { categoryId },
+            select: {
+                id: true,
+                name: true,
+                image_uri: true,
+                price: true,
+                description: true,
+                categoryId: true,
+                sizeType: true,
                 reviews: {
                     include: {
                         user: true
                     }
+                },
+                productSizes: {
+                    select : {  
+                        id: true,
+                        productId: true,
+                        size: true,
+                        stock: true,
+                    },
+                    orderBy: {
+                        sortOrder: 'asc'
+                    }
                 }
+            },
+            orderBy: {
+                id: 'asc'
             }
         });
+
         if (!products || products.length === 0) {
             return res.status(404).json({
                 success: false,
@@ -91,6 +112,7 @@ const getProductsByCategoryId = async (req, res) => {
             success: true,
             data: products,
         });
+
     } catch (error) {
         res.status(500).json({
             success: false,

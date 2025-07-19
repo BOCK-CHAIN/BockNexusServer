@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 // Add item to cart
 const addToCart = async (req, res) => {
   try {
-    const { productId, productSizeId, quantity } = req.body;
+    const { productId, productSizeId, quantity, size } = req.body;
     const userId = req.user.id; // Get from authenticated user
 
     // Validate required fields
@@ -27,9 +27,11 @@ const addToCart = async (req, res) => {
       });
     }
 
+    let productSize;
+    
     // Check if product size exists (if provided)
     if (productSizeId) {
-      const productSize = await prisma.productSize.findUnique({
+        productSize = await prisma.productSize.findUnique({
         where: { id: productSizeId }
       });
 
@@ -76,14 +78,14 @@ const addToCart = async (req, res) => {
           userId: userId,
           productId: productId,
           productSizeId: productSizeId || null,
-          quantity: quantity
+          quantity: quantity,
+          size: size || null,
         },
         include: {
           product: true,
           productSize: true
         }
       });
-    }
 
     res.status(201).json({
       success: true,
@@ -91,7 +93,7 @@ const addToCart = async (req, res) => {
       data: cartItem
     });
 
-  } catch (error) {
+  }}catch (error) {
     console.error('Error adding to cart:', error);
     res.status(500).json({
       success: false,
@@ -108,12 +110,8 @@ const getCart = async (req, res) => {
 
     const cartItems = await prisma.cartItem.findMany({
       where: { userId: userId },
-      include: {
-        product: {
-          include: {
-            category: true
-          }
-        },
+      include : {
+        product: true,
         productSize: true
       }
     });
@@ -123,7 +121,7 @@ const getCart = async (req, res) => {
     cartItems.forEach(item => {
       total += item.product.price * item.quantity;
     });
-
+    
     res.status(200).json({
       success: true,
       data: {

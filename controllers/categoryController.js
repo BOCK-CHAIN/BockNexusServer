@@ -18,7 +18,7 @@ const getAllCategories = async (req, res) => {
                 }
             },
             orderBy: {
-                name: 'asc'
+                id: 'asc'
             }
         });
         

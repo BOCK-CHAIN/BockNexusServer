@@ -18,13 +18,13 @@ router.post('/add', addToCart);
 // GET /cart - Get user's cart
 router.get('/', getCart);
 
+// DELETE /cart/clear - Clear user's cart
+router.delete('/clear', clearCart);
+
 // PUT /cart/:cartItemId - Update cart item quantity
 router.put('/:cartItemId', updateCartItem);
 
 // DELETE /cart/:cartItemId - Remove item from cart
 router.delete('/:cartItemId', removeFromCart);
-
-// DELETE /cart/clear - Clear user's cart
-router.delete('/clear', clearCart);
 
 module.exports = router; 

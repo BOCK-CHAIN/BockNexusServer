@@ -39,6 +39,7 @@ model Product {
   ar_uri       String?
   description  String?
   categoryId   Int
+  sizeType    SizeType  @default(NONE)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   cartItems    CartItem[]
@@ -53,6 +54,7 @@ model ProductSize {
   productId Int
   size      String
   stock     Int        @default(0)
+  sortOrder Int
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   cartItems CartItem[]
@@ -68,6 +70,7 @@ model CartItem {
   productId     Int
   productSizeId Int?
   quantity      Int
+  size   String?
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   product       Product      @relation(fields: [productId], references: [id])
@@ -95,6 +98,7 @@ model Order {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   addressId    Int
+  Size String?
   items        Item[]
   Address      Address       @relation(fields: [addressId], references: [id])
   user         User          @relation(fields: [userId], references: [id])
@@ -166,4 +170,16 @@ enum TypeOfAddress {
   Home
   Office
   Other
+}
+
+enum SizeType {
+  NONE
+  GENERIC
+  SHOES_UK_MEN
+  SHOES_UK_WOMEN
+  NUMERIC
+  VOLUME_ML
+  WEIGHT_G
+  ONE_SIZE
+  WAIST_INCH
 }
