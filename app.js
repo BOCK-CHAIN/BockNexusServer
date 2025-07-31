@@ -7,6 +7,7 @@ const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const addressRoutes = require('./routes/addressRoutes'); 
+const checkoutRoutes = require('./routes/checkoutRoutes')
 const cors = require('cors');
 
 const app = express();
@@ -49,6 +50,7 @@ app.use('/product', productRoutes);
 app.use('/orders', orderRoutes);
 app.use('/cart', cartRoutes);
 app.use('/address', addressRoutes);
+app.use('/checkout', checkoutRoutes)
 
 // 404 handler
 app.use((req, res) => {

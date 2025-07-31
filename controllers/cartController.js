@@ -111,10 +111,17 @@ const getCart = async (req, res) => {
     const cartItems = await prisma.cartItem.findMany({
       where: { userId: userId },
       include : {
-        product: true,
-        productSize: true
-      }
-    });
+        product: {
+          include: {
+            productSizes: {
+              orderBy: {
+                sortOrder: 'asc',
+            }
+          }
+        },
+      },
+      productSize: true
+  }});
 
     // Calculate total
     let total = 0;
@@ -175,8 +182,8 @@ const updateCartItem = async (req, res) => {
 
     // Check stock if product size is specified
     if (existingItem.productSize && existingItem.productSize.stock < quantity) {
-      return res.status(400).json({
-        success: false,
+      return res.status(200).json({
+        success: true,
         message: 'Insufficient stock for this size'
       });
     }
