@@ -47,6 +47,8 @@ model Product {
   category     Category      @relation(fields: [categoryId], references: [id])
   productSizes ProductSize[]
   reviews      Review[]
+  color        String?       
+  brand        String?      
 }
 
 model ProductSize {
