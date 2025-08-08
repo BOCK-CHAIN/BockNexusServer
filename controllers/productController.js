@@ -8,6 +8,7 @@ const getAllProducts = async (req, res) => {
             include: {
                 category: true,
                 productSizes: true,
+                brand: true,
                 reviews: {
                     include: {
                         user: true
@@ -38,6 +39,7 @@ const getProductById = async (req, res) => {
             include: {
                 category: true,
                 productSizes: true,
+                brand: true,
                 reviews: {
                     include: {
                         user: true
@@ -77,6 +79,7 @@ const getProductsByCategoryId = async (req, res) => {
                 name: true,
                 image_uri: true,
                 price: true,
+                brand: true,
                 description: true,
                 categoryId: true,
                 sizeType: true,

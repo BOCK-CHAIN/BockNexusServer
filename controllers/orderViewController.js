@@ -18,7 +18,11 @@ const getUserOrders = async (req, res) => {
                 Address: true,
                 items: {
                     include: {
-                        product: true
+                        product: {
+                            include: {
+                                reviews: true,
+                            }
+                        }
                     }
                 },
                 transactions: true
