@@ -17,6 +17,7 @@ model User {
   username     String        @unique
   Address      Address[]
   cartItems    CartItem[]
+  wishlistItems   WishlistItem[]
   orders       Order[]
   reviews      Review[]
   transactions Transaction[]
@@ -43,6 +44,7 @@ model Product {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   cartItems    CartItem[]
+  wishlistItems WishlistItem[]
   items        Item[]
   category     Category      @relation(fields: [categoryId], references: [id])
   productSizes ProductSize[]
@@ -60,6 +62,7 @@ model ProductSize {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   cartItems CartItem[]
+  wishlistItems WishlistItem[]
   items     Item[]
   product   Product    @relation(fields: [productId], references: [id])
 
@@ -67,6 +70,20 @@ model ProductSize {
 }
 
 model CartItem {
+  id            Int          @id @default(autoincrement())
+  userId        Int
+  productId     Int
+  productSizeId Int?
+  quantity      Int
+  size   String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  product       Product      @relation(fields: [productId], references: [id])
+  productSize   ProductSize? @relation(fields: [productSizeId], references: [id])
+  user          User         @relation(fields: [userId], references: [id])
+}
+
+model WishlistItem {
   id            Int          @id @default(autoincrement())
   userId        Int
   productId     Int
