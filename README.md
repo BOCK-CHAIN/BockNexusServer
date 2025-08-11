@@ -32,6 +32,8 @@ Server-side application for the BockNexus ecosystem, built with Node.js, Express
     ```sh
     DATABASE_URL = "[Your_connection_URL_here]"
     ```
+    This is how the database connection is established
+   
 5. **Migrate and seed the database**
    Do this to generate the prisma code located in the database (neon.tech server)
    ```sh
