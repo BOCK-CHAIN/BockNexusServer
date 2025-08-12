@@ -10,6 +10,7 @@ const addressRoutes = require('./routes/addressRoutes');
 const checkoutRoutes = require('./routes/checkoutRoutes')
 const reviewRoutes = require('./routes/reviewRoutes')
 const wishlistRoutes = require('./routes/wishlistRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const cors = require('cors');
 
 const app = express();
@@ -56,6 +57,9 @@ app.use('/review', reviewRoutes)
 app.use('/checkout', checkoutRoutes);
 app.use('/wishlist', wishlistRoutes);
 
+// Admin API routes for React Admin
+app.use('/admin', adminRoutes);
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
@@ -69,4 +73,5 @@ app.use((err, req, res, next) => {
 
 app.listen(port, '0.0.0.0', () => { 
   console.log(`Server running on port ${port}`);
+  console.log(`Admin API endpoints available at http://localhost:${port}/admin`);
 });
