@@ -9,10 +9,11 @@ const {
     deleteUser
 } = require('../controllers/userController');
 const { authenticateToken } = require('../middleware/auth');
+const { loginRateLimiter } = require('../middleware/rateLimit');
 
 // Public routes (no authentication required)
 router.post('/register', register);
-router.post('/login', login);
+router.post('/login', loginRateLimiter, login);
 
 // Protected routes (authentication required)
 router.get('/profile', authenticateToken, getProfile);

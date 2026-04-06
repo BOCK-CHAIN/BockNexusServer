@@ -1,6 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
 const e = require('express');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 // Get all addresses for a user
 const getUserAddresses = async (req, res) => {
@@ -164,8 +163,33 @@ const addAddress = async (req, res) => {
     }
 }
 
+// Delete an address
+const deleteAddress = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const id = Number(req.params.id);
+
+        if (!id) {
+            return res.status(400).json({ success: false, message: 'Address ID is required' });
+        }
+
+        const existing = await prisma.address.findFirst({ where: { id, userId } });
+        if (!existing) {
+            return res.status(404).json({ success: false, message: 'Address not found' });
+        }
+
+        await prisma.address.delete({ where: { id } });
+
+        res.status(200).json({ success: true, message: 'Address deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting address:', error);
+        res.status(500).json({ success: false, message: 'Failed to delete address', error: error.message });
+    }
+};
+
 module.exports = {
     getUserAddresses,
     editAddress,
-    addAddress
+    addAddress,
+    deleteAddress
 }

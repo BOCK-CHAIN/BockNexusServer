@@ -33,6 +33,9 @@ This document describes the admin functionality implemented using AdminJS and th
    - Manage sort order
 
 ## API Endpoints for React Admin
+All `/admin/*` endpoints now require:
+- A valid JWT Bearer token (`Authorization: Bearer <token>`)
+- An authenticated user with `role = ADMIN`
 
 ### Product Endpoints
 
@@ -167,7 +170,7 @@ const App = () => (
 
 ## Notes
 
-1. **Authentication**: Currently, the admin interface is open. You may want to add authentication middleware.
+1. **Authentication**: Admin routes are protected by JWT auth + role checks (`ADMIN` only).
 2. **Image Handling**: Images are stored as URLs. You may want to implement file upload functionality.
 3. **Validation**: Basic validation is implemented, but you may want to add more comprehensive validation.
 4. **Error Handling**: All endpoints include proper error handling and status codes.

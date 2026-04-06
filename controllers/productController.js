@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 // Get all products
 const getAllProducts = async (req, res) => {
@@ -8,7 +7,6 @@ const getAllProducts = async (req, res) => {
             include: {
                 category: true,
                 productSizes: true,
-                brand: true,
                 reviews: {
                     include: {
                         user: true
@@ -39,7 +37,6 @@ const getProductById = async (req, res) => {
             include: {
                 category: true,
                 productSizes: true,
-                brand: true,
                 reviews: {
                     include: {
                         user: true

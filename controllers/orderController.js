@@ -1,7 +1,81 @@
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
+
+// POST /orders/place  — direct order creation (no Razorpay verification required)
+const placeOrder = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { items, totalAmount, addressId, paymentMethod } = req.body;
+
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ success: false, message: 'Order items are required' });
+        }
+        if (!addressId) {
+            return res.status(400).json({ success: false, message: 'Shipping address is required' });
+        }
+
+        // Validate address belongs to user
+        const address = await prisma.address.findFirst({
+            where: { id: Number(addressId), userId }
+        });
+        if (!address) {
+            return res.status(404).json({ success: false, message: 'Address not found' });
+        }
+
+        const deliveryDate = new Date();
+        deliveryDate.setDate(deliveryDate.getDate() + 5);
+
+        const order = await prisma.order.create({
+            data: {
+                user: { connect: { id: userId } },
+                Address: { connect: { id: Number(addressId) } },
+                deliveryDate,
+                status: 'ORDER_PLACED',
+                items: {
+                    create: items.map(item => ({
+                        product: { connect: { id: Number(item.productId) } },
+                        quantity: Number(item.quantity),
+                        ...(item.productSizeId ? { productSize: { connect: { id: Number(item.productSizeId) } } } : {})
+                    }))
+                }
+            },
+            include: {
+                items: {
+                    include: { product: true }
+                },
+                Address: true
+            }
+        });
+
+        // Record transaction
+        if (totalAmount && Number(totalAmount) > 0) {
+            await prisma.transaction.create({
+                data: {
+                    userId,
+                    orderId: order.id,
+                    paymentId: `PAY-${Date.now()}`,
+                    orderRefId: `REF-${order.id}`,
+                    status: 'Pending',
+                    amount: Number(totalAmount)
+                }
+            });
+        }
+
+        res.status(201).json({
+            success: true,
+            message: 'Order placed successfully',
+            order
+        });
+    } catch (error) {
+        console.error('Error placing order:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to place order',
+            error: error.message
+        });
+    }
+};
 
 const createTransaction = async (req, res) => {
     const { amount, userId } = req.body;
@@ -132,4 +206,4 @@ const getOrdersByUserId = async (req, res) => {
     }
 };
 
-module.exports = { createTransaction, createOrder, getOrdersByUserId };
+module.exports = { createTransaction, createOrder, getOrdersByUserId, placeOrder };

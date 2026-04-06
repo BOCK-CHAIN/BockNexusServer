@@ -1,7 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 const authenticateToken = async (req, res, next) => {
   try {
@@ -22,9 +20,11 @@ const authenticateToken = async (req, res, next) => {
       where: { id: decoded.userId },
       select: {
         id: true,
+        userId: true,
         username: true,
         email: true,
         phone: true,
+        role: true,
       }
     });
 
@@ -46,4 +46,15 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticateToken }; 
+const requireAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== 'ADMIN') {
+    return res.status(403).json({
+      success: false,
+      message: 'Admin access required'
+    });
+  }
+
+  next();
+};
+
+module.exports = { authenticateToken, requireAdmin };

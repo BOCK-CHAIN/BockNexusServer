@@ -43,3 +43,42 @@ Server-side application for the BockNexus ecosystem, built with Node.js, Express
    ```sh
    npm start
    ```
+
+## Role-Based Auth
+- `User.role` is persisted in the database (`USER` | `ADMIN`).
+- Login returns role-aware user data, and JWT payload includes:
+  - `role`
+  - `isAdmin`
+- All `/admin/*` routes are enforced server-side with JWT auth + `ADMIN` role checks.
+
+## Admin Seeding
+Running `npm run seed` now ensures at least one admin account exists.
+
+Optional environment variables:
+```sh
+ADMIN_EMAIL=admin@nexus.local
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=UseAStrongPassword123!
+ADMIN_FIRST_NAME=Admin
+ADMIN_LAST_NAME=User
+```
+
+If `ADMIN_PASSWORD` is omitted, a one-time strong password is generated and printed during seeding.
+
+## Security Controls
+- Login endpoint is rate-limited (defaults: `10` attempts / `15m` per IP+email key).
+- Admin endpoints are rate-limited (defaults: `120` requests / `15m`).
+- In production (`NODE_ENV=production`), non-HTTPS requests are rejected.
+
+Rate-limit tuning variables:
+```sh
+LOGIN_RATE_LIMIT_MAX=10
+LOGIN_RATE_LIMIT_WINDOW_MS=900000
+ADMIN_RATE_LIMIT_MAX=120
+ADMIN_RATE_LIMIT_WINDOW_MS=900000
+```
+
+If deployed behind a proxy/load balancer, set:
+```sh
+TRUST_PROXY=true
+```

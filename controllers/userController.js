@@ -1,75 +1,72 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
+const { generateUniqueUserId } = require('../lib/userIdGenerator');
+
+const isStrongAdminPassword = (password) => {
+    if (typeof password !== 'string') return false;
+    if (password.length < 12) return false;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[^A-Za-z0-9]/.test(password);
+    return hasUppercase && hasLowercase && hasNumber && hasSpecial;
+};
 
 const generateToken = (user) => {
+    const role = user.role || 'USER';
     return jwt.sign(
-        { userId: user.id, username: user.username },
+        {
+            userId: user.id,
+            visibleUserId: user.userId,
+            username: user.username,
+            role,
+            isAdmin: role === 'ADMIN'
+        },
         process.env.JWT_SECRET || 'your-secret-key',
         { expiresIn: '7d' }
     );
 };
 
-// User Registration
+// User Registration — only requires password, generates userId automatically
 const register = async (req, res) => {
     try {
-        const { username, email, password, phone } = req.body;
+        const { password } = req.body;
 
-        // Validate required fields
-        if (!username || !email || !password) {
+        if (!password) {
             return res.status(400).json({
                 success: false,
-                message: 'Username, email, and password are required'
+                message: 'Password is required'
             });
         }
 
-        // Check if username already exists
-        const existingUsername = await prisma.user.findUnique({
-            where: { username }
-        });
-
-        if (existingUsername) {
+        if (password.length < 8) {
             return res.status(400).json({
                 success: false,
-                message: 'Username already exists'
+                message: 'Password must be at least 8 characters long'
             });
         }
 
-        // Check if email already exists
-        const existingEmail = await prisma.user.findUnique({
-            where: { email }
-        });
+        // Generate unique userId (bock1, bock2, bock3, ...)
+        const userId = await generateUniqueUserId();
 
-        if (existingEmail) {
-            return res.status(400).json({
-                success: false,
-                message: 'Email already exists'
-            });
-        }
-
-        // Hash password
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        // Create user
         const user = await prisma.user.create({
             data: {
-                username,
-                email,
+                userId,
                 password: hashedPassword,
-                phone: phone || null,
+                role: 'USER',
             },
             select: {
                 id: true,
-                username: true,
-                email: true,
-                phone: true,
+                userId: true,
+                role: true,
                 createdAt: true
             }
         });
 
-        // Generate token
         const token = generateToken(user);
 
         res.status(201).json({
@@ -77,6 +74,7 @@ const register = async (req, res) => {
             message: 'User registered successfully',
             data: {
                 user,
+                userId: user.userId,
                 token
             }
         });
@@ -91,28 +89,34 @@ const register = async (req, res) => {
     }
 };
 
-// User Login
+// User Login — accepts { userId, password }
 const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { userId, password } = req.body;
 
         // Validate required fields
-        if (!email || !password) {
+        if (!userId || !password) {
             return res.status(400).json({
                 success: false,
-                message: 'Email and password are required'
+                message: 'User ID and password are required'
             });
         }
 
-        // Find user by email
-        const user = await prisma.user.findUnique({
-            where: { email },
+        const user = await prisma.user.findFirst({
+            where: { userId: userId.toLowerCase().trim() },
             select: {
                 id: true,
+                userId: true,
+                hexId: true,
                 username: true,
                 email: true,
                 password: true,
                 phone: true,
+                firstName: true,
+                lastName: true,
+                dob: true,
+                gender: true,
+                role: true,
                 createdAt: true
             }
         });
@@ -120,7 +124,7 @@ const login = async (req, res) => {
         if (!user) {
             return res.status(401).json({
                 success: false,
-                message: 'Invalid username or password'
+                message: 'Invalid User ID or password'
             });
         }
 
@@ -130,7 +134,7 @@ const login = async (req, res) => {
         if (!isPasswordValid) {
             return res.status(401).json({
                 success: false,
-                message: 'Invalid username or password'
+                message: 'Invalid User ID or password'
             });
         }
 
@@ -162,15 +166,22 @@ const login = async (req, res) => {
 // Get User Profile
 const getProfile = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const id = req.user.id;
 
         const user = await prisma.user.findUnique({
-            where: { id: userId },
+            where: { id },
             select: {
                 id: true,
+                userId: true,
+                hexId: true,
                 username: true,
                 email: true,
                 phone: true,
+                firstName: true,
+                lastName: true,
+                dob: true,
+                gender: true,
+                role: true,
                 createdAt: true
             }
         });
@@ -200,7 +211,7 @@ const getProfile = async (req, res) => {
 // Update User Profile
 const updateProfile = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const id = req.user.id;
         const { username, email, phone } = req.body;
 
         // Check if email is being updated and if it already exists
@@ -208,7 +219,7 @@ const updateProfile = async (req, res) => {
             const existingEmail = await prisma.user.findFirst({
                 where: {
                     email,
-                    id: { not: userId }
+                    id: { not: id }
                 }
             });
 
@@ -225,7 +236,7 @@ const updateProfile = async (req, res) => {
             const existingPhone = await prisma.user.findFirst({
                 where: {
                     phone,
-                    id: { not: userId }
+                    id: { not: id }
                 }
             });
 
@@ -238,7 +249,7 @@ const updateProfile = async (req, res) => {
         }
 
         const updatedUser = await prisma.user.update({
-            where: { id: userId },
+            where: { id },
             data: {
                 username: username || undefined,
                 email: email || undefined,
@@ -246,9 +257,16 @@ const updateProfile = async (req, res) => {
             },
             select: {
                 id: true,
+                userId: true,
+                hexId: true,
                 username: true,
                 email: true,
                 phone: true,
+                firstName: true,
+                lastName: true,
+                dob: true,
+                gender: true,
+                role: true,
                 createdAt: true
             }
         });
@@ -272,10 +290,11 @@ const updateProfile = async (req, res) => {
 // Change Password
 const changePassword = async (req, res) => {
     try {
-        const userId = req.user.id;
-        const { currentPassword, newPassword } = req.body;
+        const id = req.user.id;
+        const { currentPassword, oldPassword, newPassword } = req.body;
+        const existingPassword = currentPassword || oldPassword;
 
-        if (!currentPassword || !newPassword) {
+        if (!existingPassword || !newPassword) {
             return res.status(400).json({
                 success: false,
                 message: 'Current password and new password are required'
@@ -284,17 +303,31 @@ const changePassword = async (req, res) => {
 
         // Get user with password
         const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { password: true }
+            where: { id },
+            select: { password: true, role: true }
         });
 
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
         // Verify current password
-        const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        const isCurrentPasswordValid = await bcrypt.compare(existingPassword, user.password);
 
         if (!isCurrentPasswordValid) {
             return res.status(400).json({
                 success: false,
                 message: 'Current password is incorrect'
+            });
+        }
+
+        if (user.role === 'ADMIN' && !isStrongAdminPassword(newPassword)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Admin passwords must be at least 12 characters and include upper, lower, number, and special characters'
             });
         }
 
@@ -304,7 +337,7 @@ const changePassword = async (req, res) => {
 
         // Update password
         await prisma.user.update({
-            where: { id: userId },
+            where: { id },
             data: { password: hashedNewPassword }
         });
 
@@ -327,11 +360,11 @@ const changePassword = async (req, res) => {
 const deleteUser = async (req, res) => {
     try{
 
-        const userId = req.user.id;
+        const id = req.user.id;
         const { password } = req.body;
 
         const user = await prisma.user.findUnique({
-            where: { id: userId }, 
+            where: { id }, 
         })
 
         // Check password
@@ -345,12 +378,12 @@ const deleteUser = async (req, res) => {
         }
 
         await prisma.$transaction([
-            prisma.address.deleteMany({ where: { userId } }),
-            prisma.cartItem.deleteMany({ where: { userId } }),
-            prisma.order.deleteMany({ where: { userId } }),
-            prisma.review.deleteMany({ where: { userId } }),
-            prisma.transaction.deleteMany({ where: { userId } }),
-            prisma.user.delete({ where: { id: userId } })
+            prisma.address.deleteMany({ where: { userId: id } }),
+            prisma.cartItem.deleteMany({ where: { userId: id } }),
+            prisma.order.deleteMany({ where: { userId: id } }),
+            prisma.review.deleteMany({ where: { userId: id } }),
+            prisma.transaction.deleteMany({ where: { userId: id } }),
+            prisma.user.delete({ where: { id } })
         ]);
 
         res.status(200).json(

@@ -9,12 +9,19 @@ datasource db {
 
 model User {
   id           Int           @id @default(autoincrement())
+  userId       String?       @unique
+  hexId        String?       @unique
+  firstName    String?
+  lastName     String?
+  dob          String?
+  gender       String?
   phone        String?       @unique
+  role         UserRole      @default(USER)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  email        String        @unique
+  email        String?       @unique
   password     String
-  username     String        @unique
+  username     String?       @unique
   Address      Address[]
   cartItems    CartItem[]
   wishlistItems   WishlistItem[]
@@ -189,6 +196,11 @@ enum TypeOfAddress {
   Home
   Office
   Other
+}
+
+enum UserRole {
+  USER
+  ADMIN
 }
 
 enum SizeType {

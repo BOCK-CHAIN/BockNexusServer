@@ -1,244 +1,274 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient, SizeType } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { categoriesData, productData } = require('../seedData');
-const { categoriesPageData, sampleProducts, sampleUser, sampleReviews } = require('./categoriesSeedData');
+require('dotenv').config();
+
 const prisma = new PrismaClient();
 
-async function seedHomePageData() {
-  try {
-    console.log('🌐 Starting home page data seeding...');
+const SIZE_CONFIGS = {
+  GENERIC: {
+    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+    stocks: [5, 12, 20, 18, 10, 4],
+  },
+  SHOES_UK_MEN: {
+    sizes: ['6', '7', '8', '9', '10', '11'],
+    stocks: [4, 8, 15, 15, 10, 5],
+  },
+  SHOES_UK_WOMEN: {
+    sizes: ['3', '4', '5', '6', '7', '8'],
+    stocks: [4, 8, 15, 15, 10, 5],
+  },
+  WAIST_INCH: {
+    sizes: ['28', '30', '32', '34', '36', '38'],
+    stocks: [5, 10, 18, 16, 8, 3],
+  },
+  VOLUME_ML: {
+    sizes: ['30ml', '50ml', '100ml', '200ml'],
+    stocks: [20, 30, 25, 15],
+  },
+  WEIGHT_G: {
+    sizes: ['250g', '500g', '1kg'],
+    stocks: [15, 25, 10],
+  },
+  NUMERIC: {
+    sizes: ['S', 'M', 'L'],
+    stocks: [10, 15, 8],
+  },
+  ONE_SIZE: {
+    sizes: ['One Size'],
+    stocks: [30],
+  },
+};
 
-    // Insert categories for home page
-    const categories = await prisma.category.createMany({
-      data: categoriesData.map(({ name, image_uri, createdAt, updatedAt }) => ({
-        name,
-        image_uri,
-        createdAt: createdAt ? new Date(createdAt) : undefined,
-        updatedAt: updatedAt ? new Date(updatedAt) : undefined,
-      })),
-      skipDuplicates: true
+const isStrongAdminPassword = (password) => {
+  if (typeof password !== 'string') return false;
+  if (password.length < 12) return false;
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
+  return hasUppercase && hasLowercase && hasNumber && hasSpecial;
+};
+
+const resolveAdminPassword = () => {
+  const envPassword = process.env.ADMIN_PASSWORD;
+  if (envPassword) {
+    if (!isStrongAdminPassword(envPassword)) {
+      throw new Error(
+        'ADMIN_PASSWORD must be at least 12 characters and include upper, lower, number, and special characters.'
+      );
+    }
+    return { password: envPassword, generated: false };
+  }
+
+  // Development fallback: generate one-time strong password when ADMIN_PASSWORD is not provided.
+  const generatedBase = crypto.randomBytes(18).toString('base64url');
+  const generatedPassword = `${generatedBase}Aa1!`;
+  return { password: generatedPassword, generated: true };
+};
+
+async function seedAdminUser() {
+  const adminEmail = (process.env.ADMIN_EMAIL || 'admin@nexus.local').trim().toLowerCase();
+  const adminUsername = (process.env.ADMIN_USERNAME || 'admin').trim();
+
+  if (!adminEmail || !adminUsername) {
+    throw new Error('ADMIN_EMAIL and ADMIN_USERNAME must be non-empty values.');
+  }
+
+  const existingByEmail = await prisma.user.findUnique({
+    where: { email: adminEmail },
+    select: { id: true, email: true, username: true, role: true },
+  });
+
+  const existingByUsername = await prisma.user.findUnique({
+    where: { username: adminUsername },
+    select: { id: true, email: true, username: true, role: true },
+  });
+
+  const emailTakenByDifferentUser =
+    existingByEmail && existingByEmail.role !== 'ADMIN';
+  const usernameTakenByDifferentUser =
+    existingByUsername &&
+    existingByUsername.role !== 'ADMIN' &&
+    (!existingByEmail || existingByUsername.id !== existingByEmail.id);
+
+  if (emailTakenByDifferentUser || usernameTakenByDifferentUser) {
+    throw new Error(
+      'Cannot seed admin account because ADMIN_EMAIL or ADMIN_USERNAME is already used by a non-admin user.'
+    );
+  }
+
+  const { password, generated } = resolveAdminPassword();
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  const existingAdmin = existingByEmail || existingByUsername;
+
+  if (existingAdmin) {
+    const updateData = {
+      role: 'ADMIN',
+    };
+
+    if (process.env.ADMIN_PASSWORD) {
+      updateData.password = passwordHash;
+    }
+
+    await prisma.user.update({
+      where: { id: existingAdmin.id },
+      data: updateData,
     });
 
-    // Fetch categories to map names to IDs
-    const allCategories = await prisma.category.findMany();
-    const categoryMap = allCategories.reduce((map, category) => {
-      map[category.name] = category.id;
-      return map;
-    }, {});
+    console.log(`   Admin user ensured: ${existingAdmin.email} (${existingAdmin.username})`);
+    if (!process.env.ADMIN_PASSWORD) {
+      console.log('   ADMIN_PASSWORD not provided. Existing admin password was left unchanged.');
+    }
+    return;
+  }
 
-    // Insert products for home page
-    await prisma.product.createMany({
-      data: productData.map(product => {
-        const { category, ...rest } = product;
-        return {
-          ...rest,
-          categoryId: categoryMap[product.category],
-          createdAt: product.createdAt ? new Date(product.createdAt) : undefined,
-          updatedAt: product.updatedAt ? new Date(product.updatedAt) : undefined,
-        };
-      }),
-      skipDuplicates: true
-    });
+  await prisma.user.create({
+    data: {
+      email: adminEmail,
+      username: adminUsername,
+      password: passwordHash,
+      role: 'ADMIN',
+      firstName: process.env.ADMIN_FIRST_NAME || 'Admin',
+      lastName: process.env.ADMIN_LAST_NAME || 'User',
+    },
+  });
 
-    console.log('✅ Home page data seeded successfully!');
-  } catch (error) {
-    console.error('❌ Error seeding home page data:', error);
+  console.log(`   Admin user created: ${adminEmail} (${adminUsername})`);
+  if (generated) {
+    console.log(`   Generated ADMIN password (set ADMIN_PASSWORD to override): ${password}`);
   }
 }
 
-async function seedCategoriesPageData() {
+async function seedDatabase() {
   try {
-    console.log('📂 Starting categories page data seeding...');
+    console.log('🚀 Starting complete database seeding...\n');
 
-    // Create categories for categories page
-    const createdCategories = [];
-    for (const categoryData of categoriesPageData) {
-      // Check if category already exists
-      let category = await prisma.category.findUnique({
-        where: { name: categoryData.name }
+    // ── Step 1: Upsert categories ────────────────────────────────
+    console.log('📂 Seeding categories...');
+    for (const cat of categoriesData) {
+      await prisma.category.upsert({
+        where: { name: cat.name },
+        update: { image_uri: cat.image_uri },
+        create: { name: cat.name, image_uri: cat.image_uri },
+      });
+    }
+    const allCategories = await prisma.category.findMany();
+    const categoryMap = {};
+    for (const c of allCategories) categoryMap[c.name] = c.id;
+    console.log(`   ✅ ${allCategories.length} categories ready\n`);
+
+    // ── Step 2: Upsert products with sizes ───────────────────────
+    console.log('📦 Seeding products...');
+    let created = 0;
+    let updated = 0;
+
+    for (const p of productData) {
+      const catId = categoryMap[p.category];
+      if (!catId) {
+        console.warn(`   ⚠️  Category "${p.category}" not found, skipping "${p.name}"`);
+        continue;
+      }
+
+      const sizeType = p.sizeType || 'NONE';
+
+      const existing = await prisma.product.findFirst({
+        where: { name: p.name, categoryId: catId },
       });
 
-      if (!category) {
-        // Create new category
-        category = await prisma.category.create({
-          data: categoryData
+      let product;
+      const data = {
+        name: p.name,
+        image_uri: p.image_uri,
+        price: p.price,
+        ar_uri: p.ar_uri || null,
+        description: p.description || '',
+        categoryId: catId,
+        sizeType,
+        color: p.color || null,
+        brand: p.brand || null,
+      };
+
+      if (existing) {
+        product = await prisma.product.update({
+          where: { id: existing.id },
+          data,
         });
-        console.log(`Category created: ${category.name}`);
+        updated++;
       } else {
-        // Update existing category
-        category = await prisma.category.update({
-          where: { id: category.id },
-          data: {
-            image_uri: categoryData.image_uri,
-            address: categoryData.address
-          }
-        });
-        console.log(`Category updated: ${category.name}`);
+        product = await prisma.product.create({ data });
+        created++;
       }
-      createdCategories.push(category);
-    }
 
-    // Create sample products for categories page
-    for (const productData of sampleProducts) {
-      const category = createdCategories.find(c => c.name === productData.category);
-      if (category) {
-        // Check if product already exists
-        const existingProduct = await prisma.product.findFirst({
-          where: {
-            name: productData.name,
-            categoryId: category.id
-          }
-        });
-
-        let product;
-        if (existingProduct) {
-          // Update existing product
-          product = await prisma.product.update({
-            where: { id: existingProduct.id },
-            data: {
-              image_uri: productData.image_uri,
-              price: productData.price,
-              ar_uri: productData.ar_uri,
-              description: productData.description,
-            }
-          });
-        } else {
-          // Create new product
-          product = await prisma.product.create({
-            data: {
-              name: productData.name,
-              image_uri: productData.image_uri,
-              price: productData.price,
-              ar_uri: productData.ar_uri,
-              description: productData.description,
-              categoryId: category.id,
-            }
-          });
-        }
-
-        console.log(`Product created/updated: ${product.name}`);
-
-        // Create product sizes
-        const sizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-        const stocks = [5, 10, 15, 8, 3, 2];
-
-        for (let i = 0; i < sizes.length; i++) {
+      // Create product sizes if the sizeType has a config
+      const sizeConfig = SIZE_CONFIGS[sizeType];
+      if (sizeConfig) {
+        for (let i = 0; i < sizeConfig.sizes.length; i++) {
           await prisma.productSize.upsert({
             where: {
               productId_size: {
                 productId: product.id,
-                size: sizes[i]
-              }
+                size: sizeConfig.sizes[i],
+              },
             },
-            update: {
-              stock: stocks[i]
-            },
+            update: { stock: sizeConfig.stocks[i], sortOrder: i },
             create: {
               productId: product.id,
-              size: sizes[i],
-              stock: stocks[i],
+              size: sizeConfig.sizes[i],
+              stock: sizeConfig.stocks[i],
+              sortOrder: i,
             },
           });
         }
-        console.log('Product sizes created/updated');
       }
     }
+    console.log(`   ✅ ${created} created, ${updated} updated (${productData.length} total)\n`);
 
-    // Create sample user
-    const user = await prisma.user.upsert({
-      where: { phone: sampleUser.phone },
-      update: {},
-      create: sampleUser,
-    });
+    // ── Step 3: Add sample reviews ───────────────────────────────
+    console.log('⭐ Seeding sample reviews...');
+    const users = await prisma.user.findMany({ take: 1 });
+    if (users.length > 0) {
+      const userId = users[0].id;
+      const products = await prisma.product.findMany({ take: 10 });
+      const reviewTexts = [
+        { rating: 5, comment: 'Excellent quality! Highly recommended.' },
+        { rating: 4, comment: 'Great value for money. Very satisfied.' },
+        { rating: 5, comment: 'Exactly as described. Fast delivery too!' },
+        { rating: 3, comment: 'Decent product, does the job.' },
+        { rating: 4, comment: 'Good quality, would buy again.' },
+      ];
 
-    console.log('Sample user created/updated');
-
-    // Create sample reviews
-    const fashionProduct = await prisma.product.findFirst({
-      where: { name: 'Premium Cotton T-Shirt' }
-    });
-
-    if (fashionProduct) {
-      for (const reviewData of sampleReviews) {
-        // Check if review already exists
-        const existingReview = await prisma.review.findFirst({
-          where: {
-            userId: user.id,
-            productId: fashionProduct.id,
-            comment: reviewData.comment
-          }
+      let reviewCount = 0;
+      for (const prod of products) {
+        const reviewData = reviewTexts[reviewCount % reviewTexts.length];
+        const exists = await prisma.review.findFirst({
+          where: { userId, productId: prod.id },
         });
-
-        if (!existingReview) {
+        if (!exists) {
           await prisma.review.create({
-            data: {
-              rating: reviewData.rating,
-              comment: reviewData.comment,
-              userId: user.id,
-              productId: fashionProduct.id,
-            }
+            data: { ...reviewData, userId, productId: prod.id },
           });
+          reviewCount++;
         }
       }
-      console.log('Sample reviews created/updated');
+      console.log(`   ✅ ${reviewCount} reviews added\n`);
+    } else {
+      console.log('   ⏭️  No users found, skipping reviews\n');
     }
+    // Step 4: Ensure at least one admin account exists
+    console.log('Seeding admin user...');
+    await seedAdminUser();
+    console.log('   Admin user ready\n');
 
-    console.log('✅ Categories page data seeded successfully!');
+    console.log('Database seeding completed successfully!');
   } catch (error) {
-    console.error('❌ Error seeding categories page data:', error);
-  }
-}
-
-async function seedAllData() {
-  try {
-    console.log('🚀 Starting complete database seeding...');
-    
-    await seedHomePageData();
-    await seedCategoriesPageData();
-    
-    console.log('🎉 Complete database seeding finished successfully!');
-  } catch (error) {
-    console.error('❌ Error in complete seeding:', error);
+    console.error('❌ Seeding error:', error);
   } finally {
     await prisma.$disconnect();
   }
 }
 
-// Get command line arguments
-const args = process.argv.slice(2);
-const command = args[0];
+seedDatabase();
 
-switch (command) {
-  case 'home':
-    seedHomePageData().finally(() => prisma.$disconnect());
-    break;
-  case 'categories':
-    seedCategoriesPageData().finally(() => prisma.$disconnect());
-    break;
-  case 'all':
-  default:
-    seedAllData();
-    break;
-}
-
-// Usage instructions
-if (!command || args.includes('--help')) {
-  console.log(`
-📚 Database Seeding Scripts
-
-Usage:
-  node scripts/seedAll.js [command]
-
-Commands:
-  home       - Seed only home page data (from seedData.js)
-  categories - Seed only categories page data (from categoriesSeedData.js)
-  all        - Seed both home page and categories page data (default)
-
-Examples:
-  node scripts/seedAll.js home
-  node scripts/seedAll.js categories
-  node scripts/seedAll.js all
-  node scripts/seedAll.js --help
-
-Note: Each script uses upsert operations, so running multiple times is safe.
-  `);
-} 
